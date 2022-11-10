@@ -1,0 +1,146 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/wait.h>
+
+#define PIN_LENGTH 4
+#define PIN_WAIT_INTERVAL 2
+
+void sighandler(int);
+int main()
+{
+	
+	int pipefd1[2]; 
+	int pipefd2[2];
+	int pipefd3[2];
+	int pipefd4[2];
+	
+	//Declare Variable
+    char meatID[100];
+    char meatType[100];
+    char juice[100];
+    char drinkType[100];
+    char status[100];
+    char name[100];
+    
+    signal(SIGINT, sighandler);// For give message CNTRL ^ C
+
+	if (pipe(pipefd1) == -1) {
+		fprintf(stderr, "Pipe 1 Fail");
+		return 1;
+	}
+	if (pipe(pipefd2) == -1) {
+		fprintf(stderr, "Pipe 2 Fail");
+		return 2;
+	}
+	if (pipe(pipefd3) == -1) {
+		fprintf(stderr, "Pipe 3 Fail");
+		return 3;
+	}
+	if (pipe(pipefd4) == -1) {
+		fprintf(stderr, "Pipe 4 Fail");
+		return 4;
+	}
+
+	
+	pid_t pid1 = fork();
+	pid_t pid2 = fork();
+	pid_t pid3 = fork();
+	
+	
+
+	
+	   if (pid1 > 0 && pid2 > 0 && pid3 > 0) {
+	    
+		//parent process
+		close(pipefd1[0]);
+		close(pipefd2[0]);
+		close(pipefd3[0]);
+		
+		printf("***Welcome to Burgell***\n"); 
+		printf("Beef Burger(B) Or Chicken Burger(C)?\n");
+        scanf("%s", meatID); 
+        printf("\n");
+        
+        printf("Apple Juice(A) Or Orange Juice(O): \n");
+        scanf("%s", juice);
+        printf("\n");
+        
+        printf("Take away(T) or Dine in(D)? \n");
+        scanf("%s", status); 
+        printf("\n");
+        
+        printf("Your name: \n");
+        scanf("%s", name); 
+
+        
+        write(pipefd1[1], meatID, 100);
+        write(pipefd2[1], juice, 100);
+        write(pipefd3[1], status, 100);
+        write(pipefd4[1], name, 100);
+        
+        close(pipefd1[1]);
+        close(pipefd2[1]);
+        close(pipefd3[1]);
+        close(pipefd4[1]);
+	    wait(NULL);
+	}
+	
+	else if (pid1 == 0 && pid2 > 0)
+	{
+		//1st child process
+		close(pipefd1[1]);
+		read(pipefd1[0], meatID, 100);
+		if(meatID =="b"){
+		   meatType == meatID;
+		   meatType == "Beef Burger";
+		}
+		else{
+		   meatType == "Chicken Burger";
+		}
+		printf("Your Burger Type: %s \n", meatType);
+		close(pipefd1[0]);
+	}
+	
+	else if (pid1 > 0 && pid2 == 0)
+	{
+		//2nd child
+		close(pipefd2[1]);
+		read(pipefd2[0], juice, 100);
+		if(juice == "a"){
+		   drinkType == juice;
+		   drinkType == "Apple Juice";
+		}
+		else
+		   drinkType == "Orange Juice";
+		printf("Your Drink: %s \n", drinkType);
+		close(pipefd2[0]);
+	}
+	
+	else if(pid2 > 0 && pid3 > 0)
+	{
+	   	//3rd child
+	    close(pipefd3[1]);
+		read(pipefd3[1], status, 100);
+		printf("Status: %s \n", status);
+		close(pipefd3[0]);
+	}
+	
+	else{	
+	    close(pipefd4[1]);
+		read(pipefd4[0], name, 100);
+		printf("Customer Name: %s \n", name);
+		close(pipefd4[0]);
+	}
+
+	return 0;
+
+}
+void sighandler(int sig) {
+   printf("Order Cancel");
+   exit(1);
+}
